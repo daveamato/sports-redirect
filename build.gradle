@@ -30,5 +30,8 @@ configurations {
 dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.0'
+    compile group: 'org.quartz-scheduler', name: 'quartz-jobs', version: '2.3.0'
+
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
