@@ -1,6 +1,7 @@
 package com.livexsports.redirect.jobs;
 
 import com.livexsports.redirect.cache.RedirectFileCache;
+import com.livexsports.redirect.dtos.RedirectFileDTO;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -18,11 +19,10 @@ public class ClearRedirectOldFileJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         LOGGER.info("Run clear redirect old file..");
         LocalDateTime now = LocalDateTime.now().minusMinutes(1);
-        for (Map.Entry<String, LocalDateTime> entry : RedirectFileCache.getRedirectFileCache().entrySet()) {
+        for (Map.Entry<String, RedirectFileDTO> entry : RedirectFileCache.getRedirectFileCache().entrySet()) {
             try {
-                if (entry.getValue().compareTo(now) < 0) {
-                    File file = new File(entry.getKey());
-                    boolean isDeleted = file.delete();
+                if (entry.getValue().getDownloadedAt().compareTo(now) < 0) {
+                    boolean isDeleted = entry.getValue().getFile().delete();
                     if (isDeleted) {
                         RedirectFileCache.getRedirectFileCache().remove(entry.getKey());
                     }

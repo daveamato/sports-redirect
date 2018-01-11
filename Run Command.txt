@@ -1,1 +1,1 @@
-cf push -m 1G livexsports-redirect -i 2 -p ./build/libs/redirect-0.1.war
+cf push -m 2G livexsports-redirect -i 3 -p ./build/libs/redirect-0.1.war
