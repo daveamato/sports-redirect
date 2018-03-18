@@ -32,6 +32,8 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.0'
     compile group: 'org.quartz-scheduler', name: 'quartz-jobs', version: '2.3.0'
+    compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.9'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.5'
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }

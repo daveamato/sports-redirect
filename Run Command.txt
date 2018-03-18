@@ -1,1 +1,3 @@
-cf push -m 2G livexsports-redirect -i 3 -p ./build/libs/redirect-0.1.war
+cf push -m 1536M nba-redirect -i 5 -p ./build/libs/redirect-0.1.war
+
+cf push -m 1536M soccer-redirect -i 10 -p ./build/libs/redirect-0.1.war

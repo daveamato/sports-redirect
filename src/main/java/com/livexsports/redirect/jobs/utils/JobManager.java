@@ -56,7 +56,7 @@ public class JobManager {
                 .withIdentity("ClearRedirectOldFileTrigger", "ClearRedirectOldFileGroup")
                 .startNow()
                 .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                    .withIntervalInMinutes(1)
+                    .withIntervalInSeconds(30)
                     .repeatForever())
                 .build();
             scheduler.scheduleJob(job, trigger);
