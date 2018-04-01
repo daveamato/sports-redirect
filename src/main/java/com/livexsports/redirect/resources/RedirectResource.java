@@ -81,7 +81,7 @@ public class RedirectResource {
         }
         if (fileName.contains(".m3u8")) {
             HttpGet httpGet = new HttpGet(url);
-            httpGet.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36");
+            httpGet.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36");
             String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
             StringBuilder res = new StringBuilder();
             String m3u8Lines[] = m3u8.split("\n");
