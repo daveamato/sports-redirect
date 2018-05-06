@@ -1,9 +1,10 @@
 package com.livexsports.redirect.resources;
 
+import com.livexsports.redirect.cache.KeyFileCache;
 import com.livexsports.redirect.cache.M3U8Cache;
 import com.livexsports.redirect.cache.RedirectFileCache;
-import com.livexsports.redirect.dtos.M3U8ResponseDTO;
 import com.livexsports.redirect.dtos.RedirectFileDTO;
+import com.livexsports.redirect.dtos.ResponseDTO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
@@ -37,25 +38,34 @@ public class RedirectResource {
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
 
     @GetMapping(value = "/**")
-    public void m3u8Redirect(HttpServletRequest request,
-                             HttpServletResponse response) throws IOException {
+    public void redirect(HttpServletRequest request,
+                         HttpServletResponse response) throws IOException {
         String url = request.getRequestURI().substring(14);
         String queryString = request.getQueryString();
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
-            fileName += "." + queryString;
         }
         if (fileName.contains(".m3u8")) {
-            M3U8ResponseDTO m3U8ResponseDTO = M3U8Cache.getM3u8ResponseCache().get(url);
-            if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
+            ResponseDTO responseDto = M3U8Cache.getM3u8ResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
                 String m3u8 = REST_TEMPLATE.getForObject(url, String.class);
-                m3U8ResponseDTO = new M3U8ResponseDTO();
-                m3U8ResponseDTO.setResponse(m3u8);
-                m3U8ResponseDTO.setDownloadedAt(LocalDateTime.now());
-                M3U8Cache.getM3u8ResponseCache().put(url, m3U8ResponseDTO);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(m3u8);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                M3U8Cache.getM3u8ResponseCache().put(url, responseDto);
             }
-            IOUtils.write(m3U8ResponseDTO.getResponse(), response.getOutputStream(), "UTF-8");
+            IOUtils.write(responseDto.getResponse(), response.getOutputStream(), "UTF-8");
+        } else if (fileName.contains(".file")) {
+            ResponseDTO responseDto = KeyFileCache.getKeyFileResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(3)) > 0)) {
+                String key = REST_TEMPLATE.getForObject(url, String.class);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(key);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                KeyFileCache.getKeyFileResponseCache().put(url, responseDto);
+            }
+            IOUtils.write(responseDto.getResponse(), response.getOutputStream(), "UTF-8");
         } else {
             RedirectFileDTO redirectFileDTO = RedirectFileCache.REDIRECT_FILE_CACHE.get(fileName);
             if (redirectFileDTO == null) {
@@ -81,7 +91,6 @@ public class RedirectResource {
         String baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
-            fileName += "." + queryString;
         }
         if (fileName.contains(".m3u8")) {
             HttpGet httpGet = new HttpGet(url);
@@ -96,9 +105,9 @@ public class RedirectResource {
                     res.append(line).append("\n");
                 }
             }
-            M3U8ResponseDTO m3U8ResponseDTO = M3U8Cache.getM3u8ResponseCache().get(url);
+            ResponseDTO m3U8ResponseDTO = M3U8Cache.getM3u8ResponseCache().get(url);
             if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(10)) > 0)) {
-                m3U8ResponseDTO = new M3U8ResponseDTO();
+                m3U8ResponseDTO = new ResponseDTO();
                 m3U8ResponseDTO.setResponse(res.toString());
                 m3U8ResponseDTO.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.getM3u8ResponseCache().put(url, m3U8ResponseDTO);

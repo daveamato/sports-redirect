@@ -2,7 +2,7 @@ package com.livexsports.redirect.dtos;
 
 import java.time.LocalDateTime;
 
-public class M3U8ResponseDTO {
+public class ResponseDTO {
     private LocalDateTime downloadedAt = LocalDateTime.now();
     private String response;
 
