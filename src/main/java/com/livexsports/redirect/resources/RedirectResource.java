@@ -26,7 +26,9 @@ import java.time.LocalDateTime;
 
 @CrossOrigin(origins = {
     "http://www.xfasports.com",
-    "http://xfasports.com"
+    "http://xfasports.com",
+    "http://www.sportspf.com",
+    "http://sportspf.com"
 })
 @RestController
 @RequestMapping(value = "/api/redirect")
@@ -42,10 +44,11 @@ public class RedirectResource {
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
+            fileName += "." + queryString;
         }
         if (fileName.contains(".m3u8")) {
             M3U8ResponseDTO m3U8ResponseDTO = M3U8Cache.getM3u8ResponseCache().get(url);
-            if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(10)) > 0)) {
+            if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
                 String m3u8 = REST_TEMPLATE.getForObject(url, String.class);
                 m3U8ResponseDTO = new M3U8ResponseDTO();
                 m3U8ResponseDTO.setResponse(m3u8);
@@ -78,6 +81,7 @@ public class RedirectResource {
         String baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
+            fileName += "." + queryString;
         }
         if (fileName.contains(".m3u8")) {
             HttpGet httpGet = new HttpGet(url);
