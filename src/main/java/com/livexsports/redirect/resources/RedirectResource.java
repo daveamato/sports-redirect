@@ -55,17 +55,18 @@ public class RedirectResource {
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.getM3u8ResponseCache().put(url, responseDto);
             }
-            IOUtils.write(responseDto.getResponse(), response.getOutputStream(), "UTF-8");
+            response.getWriter().write(responseDto.getResponse());
         } else if (fileName.contains(".file")) {
             ResponseDTO responseDto = KeyFileCache.getKeyFileResponseCache().get(url);
             if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(3)) > 0)) {
                 String key = REST_TEMPLATE.getForObject(url, String.class);
+                System.out.println(key);
                 responseDto = new ResponseDTO();
                 responseDto.setResponse(key);
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 KeyFileCache.getKeyFileResponseCache().put(url, responseDto);
             }
-            IOUtils.write(responseDto.getResponse(), response.getOutputStream(), "UTF-8");
+            response.getWriter().write(responseDto.getResponse());
         } else {
             RedirectFileDTO redirectFileDTO = RedirectFileCache.REDIRECT_FILE_CACHE.get(fileName);
             if (redirectFileDTO == null) {
@@ -94,7 +95,7 @@ public class RedirectResource {
         }
         if (fileName.contains(".m3u8")) {
             HttpGet httpGet = new HttpGet(url);
-            httpGet.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36");
+            httpGet.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36");
             String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
             StringBuilder res = new StringBuilder();
             String m3u8Lines[] = m3u8.split("\n");
@@ -112,7 +113,7 @@ public class RedirectResource {
                 m3U8ResponseDTO.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.getM3u8ResponseCache().put(url, m3U8ResponseDTO);
             }
-            IOUtils.write(m3U8ResponseDTO.getResponse(), response.getOutputStream(), "UTF-8");
+            response.getWriter().write(m3U8ResponseDTO.getResponse());
         }
         response.flushBuffer();
     }

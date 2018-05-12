@@ -1,1 +1,1 @@
-cf push -m 768M sportspf-redirect -p ./build/libs/redirect-0.1.war
+cf push -m 640M sportspf-redirect -p ./build/libs/redirect-0.1.war
