@@ -11,11 +11,13 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,63 +26,25 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @CrossOrigin(origins = {
-    "http://www.xfasports.com",
-    "http://xfasports.com",
-    "http://www.sportspf.com",
-    "http://sportspf.com"
+        "http://www.xfasports.com",
+        "http://xfasports.com",
+        "http://www.sportspf.com",
+        "http://sportspf.com"
 })
 @RestController
 @RequestMapping(value = "/api/redirect")
 public class RedirectResource {
-    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
+    private final RestTemplate restTemplate;
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";
 
-    @GetMapping(value = "/**")
-    public void redirect(HttpServletRequest request,
-                         HttpServletResponse response) throws IOException {
-        String url = request.getRequestURI().substring(14);
-        String queryString = request.getQueryString();
-        String fileName = url.substring(url.lastIndexOf("/") + 1);
-        if (queryString != null) {
-            url += "?" + queryString;
-        }
-        if (fileName.contains(".m3u8")) {
-            ResponseDTO responseDto = M3U8Cache.getM3u8ResponseCache().get(url);
-            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
-                String m3u8 = REST_TEMPLATE.getForObject(url, String.class);
-                responseDto = new ResponseDTO();
-                responseDto.setResponse(m3u8);
-                responseDto.setDownloadedAt(LocalDateTime.now());
-                M3U8Cache.getM3u8ResponseCache().put(url, responseDto);
-            }
-            response.getWriter().write(responseDto.getResponse());
-        } else if (fileName.contains(".file")) {
-            ResponseDTO responseDto = KeyFileCache.getKeyFileResponseCache().get(url);
-            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(3)) > 0)) {
-                String key = REST_TEMPLATE.getForObject(url, String.class);
-                System.out.println(key);
-                responseDto = new ResponseDTO();
-                responseDto.setResponse(key);
-                responseDto.setDownloadedAt(LocalDateTime.now());
-                KeyFileCache.getKeyFileResponseCache().put(url, responseDto);
-            }
-            response.getWriter().write(responseDto.getResponse());
-        } else {
-            RedirectFileDTO redirectFileDTO = RedirectFileCache.REDIRECT_FILE_CACHE.get(fileName);
-            if (redirectFileDTO == null) {
-                redirectFileDTO = new RedirectFileDTO();
-                redirectFileDTO.setFile(new File(fileName));
-                redirectFileDTO.setDownloadedAt(LocalDateTime.now());
-                FileUtils.copyURLToFile(new URL(url), redirectFileDTO.getFile());
-                RedirectFileCache.REDIRECT_FILE_CACHE.put(fileName, redirectFileDTO);
-            }
-            FileInputStream fileInputStream = new FileInputStream(redirectFileDTO.getFile());
-            IOUtils.copy(fileInputStream, response.getOutputStream());
-            fileInputStream.close();
-        }
-        response.flushBuffer();
+    @Autowired
+    public RedirectResource(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping(value = "/withBaseUrl/**")
@@ -95,7 +59,7 @@ public class RedirectResource {
         }
         if (fileName.contains(".m3u8")) {
             HttpGet httpGet = new HttpGet(url);
-            httpGet.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36");
+            httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
             String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
             StringBuilder res = new StringBuilder();
             String m3u8Lines[] = m3u8.split("\n");
@@ -107,13 +71,82 @@ public class RedirectResource {
                 }
             }
             ResponseDTO m3U8ResponseDTO = M3U8Cache.getM3u8ResponseCache().get(url);
-            if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(10)) > 0)) {
+            if (!(m3U8ResponseDTO != null && m3U8ResponseDTO.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(9)) > 0)) {
                 m3U8ResponseDTO = new ResponseDTO();
                 m3U8ResponseDTO.setResponse(res.toString());
                 m3U8ResponseDTO.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.getM3u8ResponseCache().put(url, m3U8ResponseDTO);
             }
             response.getWriter().write(m3U8ResponseDTO.getResponse());
+        }
+        response.flushBuffer();
+    }
+
+    @GetMapping(value = "/withTimer/{timer}/**")
+    public void redirectWithTimer(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  @PathVariable(value = "timer") Long timer) throws IOException {
+        String url = request.getRequestURI().substring(27);
+        String queryString = request.getQueryString();
+        String fileName = url.substring(url.lastIndexOf("/") + 1);
+        if (queryString != null) {
+            url += "?" + queryString;
+        }
+        if (fileName.contains(".m3u8")) {
+            ResponseDTO responseDto = M3U8Cache.getM3u8ResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(timer)) > 0)) {
+                String m3u8 = restTemplate.getForObject(url, String.class);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(m3u8);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                M3U8Cache.getM3u8ResponseCache().put(url, responseDto);
+            }
+            response.getWriter().write(responseDto.getResponse());
+        } else if (fileName.contains(".file")) {
+            ResponseDTO responseDto = KeyFileCache.getKeyFileResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(3)) > 0)) {
+                String key = restTemplate.getForObject(url, String.class);
+                System.out.println(key);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(key);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                KeyFileCache.getKeyFileResponseCache().put(url, responseDto);
+            }
+            response.getWriter().write(responseDto.getResponse());
+        }
+        response.flushBuffer();
+    }
+
+    @GetMapping(value = "/**")
+    public void redirect(HttpServletRequest request,
+                         HttpServletResponse response) throws IOException {
+        String url = request.getRequestURI().substring(14);
+        String queryString = request.getQueryString();
+        String fileName = url.substring(url.lastIndexOf("/") + 1);
+        if (queryString != null) {
+            url += "?" + queryString;
+        }
+        if (fileName.contains(".m3u8")) {
+            ResponseDTO responseDto = M3U8Cache.getM3u8ResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(9)) > 0)) {
+                String m3u8 = restTemplate.getForObject(url, String.class);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(m3u8);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                M3U8Cache.getM3u8ResponseCache().put(url, responseDto);
+            }
+            response.getWriter().write(responseDto.getResponse());
+        } else if (fileName.contains(".file") || url.contains("keys")) {
+            ResponseDTO responseDto = KeyFileCache.getKeyFileResponseCache().get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(3)) > 0)) {
+                String key = restTemplate.getForObject(url, String.class);
+                System.out.println(key);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(key);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                KeyFileCache.getKeyFileResponseCache().put(url, responseDto);
+            }
+            response.getWriter().write(responseDto.getResponse());
         }
         response.flushBuffer();
     }

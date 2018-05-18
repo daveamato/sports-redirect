@@ -1,5 +1,6 @@
 package com.livexsports.redirect.jobs.utils;
 
+import com.livexsports.redirect.jobs.ClearCacheJob;
 import com.livexsports.redirect.jobs.ClearRedirectOldFileJob;
 import org.quartz.*;
 import org.slf4j.Logger;
@@ -23,7 +24,33 @@ public class JobManager {
 
     @PostConstruct
     public void initializeJobs() {
-        runClearRedirectOldFile();
+        runClearCache();
+//        runClearRedirectOldFile();
+    }
+
+    private void runClearCache() {
+        JobKey jobKey = new JobKey("ClearCacheName", "ClearCacheGroup");
+        try {
+            if (scheduler.checkExists(jobKey)) {
+                return;
+            }
+            LOGGER.info("Clear cache job is creating...");
+
+            JobDetail job = JobBuilder.newJob(ClearCacheJob.class)
+                    .withIdentity("ClearCacheName", "ClearCacheGroup")
+                    .build();
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity("ClearCacheTrigger", "ClearCacheGroup")
+                    .startNow()
+                    .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                            .withIntervalInMinutes(10)
+                            .repeatForever())
+                    .build();
+            scheduler.scheduleJob(job, trigger);
+            LOGGER.info("Scheduler for clear cache is started.");
+        } catch (SchedulerException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 
     private void runClearRedirectOldFile() {
@@ -50,15 +77,15 @@ public class JobManager {
             LOGGER.info("Clear redirect old file job is creating...");
 
             JobDetail job = JobBuilder.newJob(ClearRedirectOldFileJob.class)
-                .withIdentity("ClearRedirectOldFileName", "ClearRedirectOldFileGroup")
-                .build();
+                    .withIdentity("ClearRedirectOldFileName", "ClearRedirectOldFileGroup")
+                    .build();
             Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("ClearRedirectOldFileTrigger", "ClearRedirectOldFileGroup")
-                .startNow()
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                    .withIntervalInSeconds(30)
-                    .repeatForever())
-                .build();
+                    .withIdentity("ClearRedirectOldFileTrigger", "ClearRedirectOldFileGroup")
+                    .startNow()
+                    .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                            .withIntervalInSeconds(30)
+                            .repeatForever())
+                    .build();
             scheduler.scheduleJob(job, trigger);
             LOGGER.info("Scheduler for clear redirect old file is started.");
         } catch (SchedulerException e) {

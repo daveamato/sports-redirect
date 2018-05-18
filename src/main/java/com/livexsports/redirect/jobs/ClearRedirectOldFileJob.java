@@ -2,6 +2,7 @@ package com.livexsports.redirect.jobs;
 
 import com.livexsports.redirect.cache.RedirectFileCache;
 import com.livexsports.redirect.dtos.RedirectFileDTO;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -15,13 +16,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@DisallowConcurrentExecution
 public class ClearRedirectOldFileJob implements Job {
     private final Logger LOGGER = LoggerFactory.getLogger(ClearRedirectOldFileJob.class);
     private static final List<String> FILE_NAMES = new ArrayList<>();
     private static int index = 0;
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(JobExecutionContext context) {
         LOGGER.info("Run clear redirect old file..");
         Set<Map.Entry<String, RedirectFileDTO>> entries = RedirectFileCache.REDIRECT_FILE_CACHE.entrySet();
         RedirectFileCache.REDIRECT_FILE_CACHE = new ConcurrentHashMap<>();
