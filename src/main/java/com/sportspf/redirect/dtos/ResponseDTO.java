@@ -1,4 +1,4 @@
-package com.livexsports.redirect.dtos;
+package com.sportspf.redirect.dtos;
 
 import java.time.LocalDateTime;
 

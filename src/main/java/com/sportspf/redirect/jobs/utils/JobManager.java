@@ -1,7 +1,7 @@
-package com.livexsports.redirect.jobs.utils;
+package com.sportspf.redirect.jobs.utils;
 
-import com.livexsports.redirect.jobs.ClearCacheJob;
-import com.livexsports.redirect.jobs.ClearRedirectOldFileJob;
+import com.sportspf.redirect.jobs.ClearCacheJob;
+import com.sportspf.redirect.jobs.ClearRedirectOldFileJob;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

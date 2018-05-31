@@ -1,4 +1,4 @@
-package com.livexsports.redirect;
+package com.sportspf.redirect;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,4 +1,4 @@
-package com.livexsports.redirect.configurations;
+package com.sportspf.redirect.configurations;
 
 import net.sf.ehcache.Ehcache;
 import org.apache.http.client.HttpClient;
@@ -8,6 +8,7 @@ import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.apache.http.impl.client.cache.ehcache.EhcacheHttpCacheStorage;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -17,11 +18,10 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-import org.springframework.cache.Cache;
 
 @EnableWebMvc
 @Configuration
-@ComponentScan({"com.livexsports.redirect"})
+@ComponentScan({"com.sportspf.redirect"})
 @EnableCaching
 public class ApplicationWebConfig extends WebMvcConfigurerAdapter {
     public static final int DEFAULT_MAX_CACHE_ENTRIES = 50;

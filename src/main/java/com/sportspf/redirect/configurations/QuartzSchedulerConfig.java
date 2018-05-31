@@ -1,4 +1,4 @@
-package com.livexsports.redirect.configurations;
+package com.sportspf.redirect.configurations;
 
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;

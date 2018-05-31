@@ -1,6 +1,6 @@
-package com.livexsports.redirect.cache;
+package com.sportspf.redirect.cache;
 
-import com.livexsports.redirect.dtos.RedirectFileDTO;
+import com.sportspf.redirect.dtos.RedirectFileDTO;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

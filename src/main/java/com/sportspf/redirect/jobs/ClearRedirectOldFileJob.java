@@ -1,11 +1,9 @@
-package com.livexsports.redirect.jobs;
+package com.sportspf.redirect.jobs;
 
-import com.livexsports.redirect.cache.RedirectFileCache;
-import com.livexsports.redirect.dtos.RedirectFileDTO;
-import org.quartz.DisallowConcurrentExecution;
+import com.sportspf.redirect.cache.RedirectFileCache;
+import com.sportspf.redirect.dtos.RedirectFileDTO;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@DisallowConcurrentExecution
 public class ClearRedirectOldFileJob implements Job {
     private final Logger LOGGER = LoggerFactory.getLogger(ClearRedirectOldFileJob.class);
     private static final List<String> FILE_NAMES = new ArrayList<>();
