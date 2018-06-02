@@ -9,16 +9,15 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @CrossOrigin(origins = {
         "http://www.sportspf.com",
@@ -28,8 +27,14 @@ import java.time.LocalDateTime;
 @RequestMapping(value = "/api/redirect")
 public class RedirectResource {
     private final RestTemplate restTemplate;
+    private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";
+
+    static {
+        MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/mlb/");
+        MLB_KEY_URL_MAP.put(3, "http://bilasport.net/keys/");
+    }
 
     @Autowired
     public RedirectResource(RestTemplate restTemplate) {
@@ -90,10 +95,58 @@ public class RedirectResource {
         response.flushBuffer();
     }
 
-    @GetMapping(value = "/**")
+    @GetMapping(value = "/mlb/{id}/**")
+    public void redirectMLB(HttpServletRequest request,
+                            HttpServletResponse response,
+                            @PathVariable(value = "id") Integer id) throws IOException {
+        String url = MLB_KEY_URL_MAP.get(id);
+        if (url == null) {
+            response.flushBuffer();
+            return;
+        }
+        url += request.getRequestURI().substring(20);
+        String queryString = request.getQueryString();
+        String fileName = url.substring(url.lastIndexOf("/") + 1);
+        if (queryString != null) {
+            url += "?" + queryString;
+        }
+        if (fileName.contains(".file") || url.contains("keys")) {
+            ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
+                Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
+                while (check != null) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                    check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
+                    if (check != null) {
+                        responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
+                        if (responseDto != null) {
+                            response.getWriter().write(responseDto.getResponse());
+                        }
+                        response.flushBuffer();
+                        return;
+                    }
+                }
+                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
+                String key = restTemplate.getForObject(url, String.class);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(key);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
+                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
+            }
+            response.getWriter().write(responseDto.getResponse());
+        }
+        response.flushBuffer();
+    }
+
+    @GetMapping(value = "/withUrl/**")
     public void redirect(HttpServletRequest request,
                          HttpServletResponse response) throws IOException {
-        String url = request.getRequestURI().substring(14);
+        String url = request.getRequestURI().substring(22);
         String queryString = request.getQueryString();
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
@@ -126,35 +179,6 @@ public class RedirectResource {
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
-            }
-            response.getWriter().write(responseDto.getResponse());
-        } else if (fileName.contains(".file") || url.contains("keys")) {
-            ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
-                Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-                while (check != null) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-                    if (check != null) {
-                        responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-                        if (responseDto != null) {
-                            response.getWriter().write(responseDto.getResponse());
-                        }
-                        response.flushBuffer();
-                        return;
-                    }
-                }
-                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-                String key = restTemplate.getForObject(url, String.class);
-                responseDto = new ResponseDTO();
-                responseDto.setResponse(key);
-                responseDto.setDownloadedAt(LocalDateTime.now());
-                KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
-                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
             }
             response.getWriter().write(responseDto.getResponse());
         }
