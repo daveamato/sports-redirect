@@ -29,11 +29,13 @@ public class RedirectResource {
     private final RestTemplate restTemplate;
     private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36";
 
     static {
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/mlb/");
         MLB_KEY_URL_MAP.put(3, "http://bilasport.net/keys/");
+        MLB_KEY_URL_MAP.put(4, "http://sports24.fun/mlb/test/");
+        MLB_KEY_URL_MAP.put(5, "http://sports24.fun/mlb/keys/");
     }
 
     @Autowired
