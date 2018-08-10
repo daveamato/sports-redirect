@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @CrossOrigin(origins = {
-        "http://www.sportspf.com",
-        "http://sportspf.com",
         "http://www.cominstream.com",
         "http://cominstream.com"
 })
