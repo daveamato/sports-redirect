@@ -32,11 +32,10 @@ public class RedirectResource {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36";
 
     static {
-        MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/mlb/");
+        MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/keys/");
         MLB_KEY_URL_MAP.put(3, "http://bilasport.net/keys/");
         MLB_KEY_URL_MAP.put(4, "http://sports24.fun/mlb/test/");
         MLB_KEY_URL_MAP.put(5, "http://sports24.fun/mlb/keys/");
-        MLB_KEY_URL_MAP.put(6, "http://52.56.118.143/mlbk/");
     }
 
     @Autowired
@@ -102,6 +101,8 @@ public class RedirectResource {
     public void redirectMLB(HttpServletRequest request,
                             HttpServletResponse response,
                             @PathVariable(value = "id") Integer id) throws IOException {
+        response.setCharacterEncoding("windows-1252");
+        response.setContentType("application/octet-stream");
         String url = MLB_KEY_URL_MAP.get(id);
         if (url == null) {
             response.flushBuffer();
@@ -134,7 +135,9 @@ public class RedirectResource {
                     }
                 }
                 KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-                String key = restTemplate.getForObject(url, String.class);
+                HttpGet httpGet = new HttpGet(url);
+                httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
+                String key = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "windows-1252");
                 responseDto = new ResponseDTO();
                 responseDto.setResponse(key);
                 responseDto.setDownloadedAt(LocalDateTime.now());

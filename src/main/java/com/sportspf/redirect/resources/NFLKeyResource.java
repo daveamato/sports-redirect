@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @RequestMapping(value = "/api/nfl")
 public class NFLKeyResource {
     private final RestTemplate restTemplate;
-    private static final String BASE_URL = "https://comin-redirect.cfapps.io/api/nfl/m3u8/";
+    private static final String BASE_URL = "http://www.cominstream.com/nfl.key";
 //    private static final String BASE_URL = "http://localhost:8080/api/nfl/m3u8/";
 
     public NFLKeyResource(RestTemplate restTemplate) {
@@ -41,7 +41,7 @@ public class NFLKeyResource {
         }
         ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
         if (!(responseDto != null
-                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(9)) > 0)) {
+                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
             Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
             while (check != null) {
                 try {
@@ -64,7 +64,7 @@ public class NFLKeyResource {
             String m3u8 = restTemplate.getForObject(url, String.class);
             if (!fileName.contains("key")) {
                 int from = m3u8.indexOf("AES-128,URI=\"") + 13;
-                m3u8 = m3u8.substring(0, from) + BASE_URL + url.substring(0, url.lastIndexOf("/as/live/") + 9) + m3u8.substring(from);
+                m3u8 = m3u8.substring(0, from) + BASE_URL + m3u8.substring(m3u8.indexOf("\"", from));
                 StringBuilder res = new StringBuilder();
                 String m3u8Lines[] = m3u8.split("\n");
                 for (String line : m3u8Lines) {

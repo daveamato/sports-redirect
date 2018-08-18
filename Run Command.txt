@@ -1,2 +1,2 @@
 cf push -m 640M comin-redirect -p ./build/libs/redirect-0.1.war
-cf push -m 640M nfl-redirect -p ./build/libs/redirect-0.1.war
+cf push -m 640M mlb-redirect -p ./build/libs/redirect-0.1.war
