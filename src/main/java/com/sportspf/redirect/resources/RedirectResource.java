@@ -3,6 +3,7 @@ package com.sportspf.redirect.resources;
 import com.sportspf.redirect.cache.KeyFileCache;
 import com.sportspf.redirect.cache.M3U8Cache;
 import com.sportspf.redirect.dtos.ResponseDTO;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
@@ -14,10 +15,14 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 @CrossOrigin(origins = {
         "http://www.cominstream.com",
@@ -101,7 +106,6 @@ public class RedirectResource {
     public void redirectMLB(HttpServletRequest request,
                             HttpServletResponse response,
                             @PathVariable(value = "id") Integer id) throws IOException {
-        response.setCharacterEncoding("windows-1252");
         response.setContentType("application/octet-stream");
         String url = MLB_KEY_URL_MAP.get(id);
         if (url == null) {
@@ -116,6 +120,7 @@ public class RedirectResource {
         }
         if (fileName.contains(".file") || url.contains("keys")) {
             ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
+            File file = new File(fileName);
             if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
                 Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
                 while (check != null) {
@@ -128,23 +133,27 @@ public class RedirectResource {
                     if (check != null) {
                         responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
                         if (responseDto != null) {
-                            response.getWriter().write(responseDto.getResponse());
+                            InputStream inputStream = new FileInputStream(file);
+                            IOUtils.copy(inputStream, response.getOutputStream());
+                            inputStream.close();
                         }
                         response.flushBuffer();
                         return;
                     }
                 }
                 KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-                HttpGet httpGet = new HttpGet(url);
-                httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
-                String key = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "windows-1252");
+                ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream());
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                fos.close();
                 responseDto = new ResponseDTO();
-                responseDto.setResponse(key);
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
                 KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
             }
-            response.getWriter().write(responseDto.getResponse());
+            InputStream inputStream = new FileInputStream(file);
+            IOUtils.copy(inputStream, response.getOutputStream());
+            inputStream.close();
         }
         response.flushBuffer();
     }
