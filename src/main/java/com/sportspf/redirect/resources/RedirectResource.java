@@ -26,13 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-@CrossOrigin(origins = {
-        "http://localhost",
-        "http://localhost:8080",
-        "http://chowder.ml"
-})
-
-
 @RestController
 @RequestMapping(value = "/api/redirect")
 public class RedirectResource {
