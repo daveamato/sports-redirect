@@ -14,15 +14,17 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 @CrossOrigin(origins = {
-        "http://www.cominstream.com",
-        "http://cominstream.com"
+        "http://localhost",
+        "http://localhost:8080",
+        "https://chowder-sports.herokuapp.com",
+        "http://chowder.ml",
 })
 @RestController
 @RequestMapping(value = "/api/nfl")
 public class NFLKeyResource {
     private final RestTemplate restTemplate;
-    private static final String BASE_URL = "http://www.cominstream.com/nfl.key";
-//    private static final String BASE_URL = "http://localhost:8080/api/nfl/m3u8/";
+    //private static final String BASE_URL = "http://www.cominstream.com/nfl.key";
+    private static final String BASE_URL = "http://localhost:8080/api/nfl/m3u8/";
 
     public NFLKeyResource(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

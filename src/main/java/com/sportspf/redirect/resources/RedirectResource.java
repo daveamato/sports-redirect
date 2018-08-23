@@ -29,7 +29,7 @@ import java.util.Scanner;
 @CrossOrigin(origins = {
         "http://localhost",
         "http://localhost:8080",
-        "http://cominstream.com"
+        "http://chowder.ml"
 })
 
 
