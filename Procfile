@@ -1,1 +1,1 @@
-web: java -jar webapp-runner.jar build/libs/sports-redirect-*.war
+web: java -Dgrails.env=prod -jar webapp-runner-*.jar --expand-war --port $PORT build/libs/sports-redirect-*.war
