@@ -28,6 +28,7 @@ configurations {
 }
 
 dependencies {
+    compile('com.github.jsimone:webapp-runner:8.5.11.3')
     compile('org.springframework.boot:spring-boot-starter-web')
     compile('org.springframework.boot:spring-boot-starter-cache')
     compile group: 'net.sf.ehcache', name: 'ehcache', version: '2.10.5'
@@ -40,3 +41,18 @@ dependencies {
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
+
+
+task stage() {
+    dependsOn clean, war
+}
+war.mustRunAfter clean
+
+task copyToLib(type: Copy) {
+    into "$buildDir/server"
+    from(configurations.compile) {
+        include "webapp-runner*"
+    }
+}
+
+stage.dependsOn(copyToLib)
