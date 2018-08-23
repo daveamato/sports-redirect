@@ -1,1 +1,1 @@
-web: java -jar webapp-runner-*.jar build/libs/*.war
+web: java -jar webapp-runner.jar build/libs/sports-redirect-*.war
