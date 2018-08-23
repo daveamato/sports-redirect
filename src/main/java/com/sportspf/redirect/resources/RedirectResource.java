@@ -10,6 +10,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,9 +27,12 @@ import java.util.Map;
 import java.util.Scanner;
 
 @CrossOrigin(origins = {
-        "http://www.cominstream.com",
+        "http://localhost",
+        "http://localhost:8080",
         "http://cominstream.com"
 })
+
+
 @RestController
 @RequestMapping(value = "/api/redirect")
 public class RedirectResource {
