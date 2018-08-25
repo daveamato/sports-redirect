@@ -3,7 +3,6 @@ package com.sportspf.redirect.resources;
 import com.sportspf.redirect.cache.KeyFileCache;
 import com.sportspf.redirect.cache.M3U8Cache;
 import com.sportspf.redirect.dtos.ResponseDTO;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
@@ -22,7 +21,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 @CrossOrigin(origins = {
         "http://www.cominstream.com",
@@ -32,6 +30,8 @@ import java.util.Scanner;
 @RequestMapping(value = "/api/redirect")
 public class RedirectResource {
     private final RestTemplate restTemplate;
+    private static final String BASE_URL = "https://ncaaf-redirect.cfapps.io/api/redirect/ncaaf/";
+    //    private static final String BASE_URL = "http://localhost:8080/api/redirect/ncaaf/";
     private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36";
@@ -189,6 +189,59 @@ public class RedirectResource {
                 }
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.put(url, true);
                 String m3u8 = restTemplate.getForObject(url, String.class);
+                responseDto = new ResponseDTO();
+                responseDto.setResponse(m3u8);
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
+                M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
+            }
+            response.getWriter().write(responseDto.getResponse());
+        }
+        response.flushBuffer();
+    }
+
+    @GetMapping(value = "/ncaaf/**")
+    public void ncaaf(HttpServletRequest request,
+                      HttpServletResponse response) throws IOException {
+        String url = request.getRequestURI().substring(20);
+        String queryString = request.getQueryString();
+        String fileName = url.substring(url.lastIndexOf("/") + 1);
+        if (queryString != null) {
+            url += "?" + queryString;
+        }
+        if (fileName.contains(".m3u8") || fileName.contains("check")) {
+            ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
+            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
+                Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
+                while (check != null) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                    check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
+                    if (check != null) {
+                        responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
+                        if (responseDto != null) {
+                            response.getWriter().write(responseDto.getResponse());
+                        }
+                        response.flushBuffer();
+                        return;
+                    }
+                }
+                M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.put(url, true);
+                String m3u8 = restTemplate.getForObject(url, String.class);
+                if (fileName.contains("m3u8")) {
+                    if (m3u8.contains("EXT-UPLYNK-LIVE")) {
+                        m3u8 = m3u8.replaceAll("https", BASE_URL + "https");
+                    } else {
+                        int from = m3u8.indexOf("#UPLYNK-KEY:") + 12;
+                        if (from > 12) {
+                            m3u8 = m3u8.substring(0, from) + BASE_URL + m3u8.substring(from);
+                            m3u8 = m3u8.replaceAll("AES-128,URI=\"", "AES-128,URI=\"" + BASE_URL);
+                        }
+                    }
+                }
                 responseDto = new ResponseDTO();
                 responseDto.setResponse(m3u8);
                 responseDto.setDownloadedAt(LocalDateTime.now());
