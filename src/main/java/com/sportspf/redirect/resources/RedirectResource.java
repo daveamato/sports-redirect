@@ -1,5 +1,6 @@
 package com.sportspf.redirect.resources;
 
+import com.mchange.util.Base64Encoder;
 import com.sportspf.redirect.cache.KeyFileCache;
 import com.sportspf.redirect.cache.M3U8Cache;
 import com.sportspf.redirect.dtos.ResponseDTO;
@@ -18,7 +19,9 @@ import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -204,6 +207,9 @@ public class RedirectResource {
     public void ncaaf(HttpServletRequest request,
                       HttpServletResponse response) throws IOException {
         String url = request.getRequestURI().substring(20);
+        if (!url.startsWith("http")) {
+            url = new String(Base64.getDecoder().decode(url), StandardCharsets.UTF_8);
+        }
         String queryString = request.getQueryString();
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
