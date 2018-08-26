@@ -41,11 +41,11 @@ public class NFLKeyResource {
         }
         ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
         if (!(responseDto != null
-                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
+                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(10)) > 0)) {
             Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
             while (check != null) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     // ignore
                 }
