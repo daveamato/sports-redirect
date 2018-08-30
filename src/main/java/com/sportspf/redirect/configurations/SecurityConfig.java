@@ -24,9 +24,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
       .requestMatchers(r -> r.getHeader("X-Forwarded-Proto") != null)
       .requiresSecure();
   }
- 
-    @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true) 
-    private static class GlobalSecurityConfiguration extends GlobalMethodSecurityConfiguration { 
-    } 
- 
 }
