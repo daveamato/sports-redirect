@@ -2,18 +2,16 @@ package com.sportspf.redirect.configurations;
 
 import org.springframework.context.annotation.HttpSecurity;
 
-org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.WebSecurityConfigurerAdapter
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
-@Configuration 
-@EnableWebMvcSecurity
+@Configuration
 @ComponentScan({"com.sportspf.redirect"})
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
   
