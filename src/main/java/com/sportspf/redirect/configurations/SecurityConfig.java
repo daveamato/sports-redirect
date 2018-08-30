@@ -1,16 +1,16 @@
 package com.sportspf.redirect.configurations;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.HttpSecurity;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder; 
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity; 
-import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration; 
-import org.springframework.security.config.annotation.web.builders.HttpSecurity; 
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter; 
-import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity; 
-import org.springframework.security.config.annotation.web.servlet.configuration.ComponentScan;
+
+org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.WebSecurityConfigurerAdapter
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 @Configuration 
 @EnableWebMvcSecurity
