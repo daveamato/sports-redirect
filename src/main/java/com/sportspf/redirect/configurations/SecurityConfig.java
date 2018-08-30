@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
 @Configuration
+@EnableMvcSecurity
 @ComponentScan({"com.sportspf.redirect"})
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
   
