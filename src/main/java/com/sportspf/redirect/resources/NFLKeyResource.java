@@ -45,7 +45,7 @@ public class NFLKeyResource {
             Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
             while (check != null) {
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     // ignore
                 }

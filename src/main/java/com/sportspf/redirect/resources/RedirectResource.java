@@ -61,7 +61,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -76,7 +76,6 @@ public class RedirectResource {
                     }
                 }
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.put(url, true);
-                responseDto = new ResponseDTO();
                 HttpGet httpGet = new HttpGet(url);
                 httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
                 String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
@@ -89,6 +88,7 @@ public class RedirectResource {
                         res.append(line).append("\n");
                     }
                 }
+                responseDto = new ResponseDTO();
                 responseDto.setResponse(res.toString());
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
@@ -122,7 +122,7 @@ public class RedirectResource {
                 Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -170,7 +170,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -200,7 +200,7 @@ public class RedirectResource {
     @GetMapping(value = "/ncaaf/**")
     public void ncaaf(HttpServletRequest request,
                       HttpServletResponse response) throws IOException {
-        String url = "https://content-aaps1.uplynk.com/event/" + request.getRequestURI().substring(20);
+        String url = request.getRequestURI().substring(20);
         String queryString = request.getQueryString();
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
@@ -212,7 +212,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // ignore
                     }
