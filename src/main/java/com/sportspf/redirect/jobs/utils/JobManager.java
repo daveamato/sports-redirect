@@ -25,7 +25,7 @@ public class JobManager {
     @PostConstruct
     public void initializeJobs() {
         runClearCache();
-//        runClearRedirectOldFile();
+        runClearRedirectOldFile();
     }
 
     private void runClearCache() {
