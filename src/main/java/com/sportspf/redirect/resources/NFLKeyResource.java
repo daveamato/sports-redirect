@@ -64,7 +64,7 @@ public class NFLKeyResource {
             String m3u8 = restTemplate.getForObject(url, String.class);
             if (!fileName.contains("key")) {
                 int from = m3u8.indexOf("AES-128,URI=\"") + 13;
-                m3u8 = m3u8.substring(0, from) + BASE_URL + m3u8.substring(m3u8.indexOf("\"", from));
+                m3u8 = m3u8.substring(0, from) + baseUrl + m3u8.substring(from);
                 StringBuilder res = new StringBuilder();
                 String m3u8Lines[] = m3u8.split("\n");
                 for (String line : m3u8Lines) {
