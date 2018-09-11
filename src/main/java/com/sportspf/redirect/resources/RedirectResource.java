@@ -36,9 +36,10 @@ public class RedirectResource {
     //    private static final String BASE_URL = "http://localhost:8080/api/redirect/ncaaf/";
     private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36";
 
     static {
+        MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
 
@@ -96,6 +97,7 @@ public class RedirectResource {
                     responseDto.setDownloadedAt(LocalDateTime.now());
                     M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     // ignore
                 }
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
@@ -103,7 +105,7 @@ public class RedirectResource {
             if (responseDto != null) {
                 response.getWriter().write(responseDto.getResponse());
             }
-        } else if (fileName.contains(".file") || url.contains("keys")) {
+        } else {
             ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
             if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
                 Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
@@ -248,7 +250,7 @@ public class RedirectResource {
             if (responseDto != null) {
                 response.getWriter().write(responseDto.getResponse());
             }
-        } else if (fileName.contains(".ts")) {
+        } else {
             File file = new File(fileName);
             RedirectFileDTO redirectFileDto = RedirectFileCache.REDIRECT_FILE_CACHE.get(url);
             if (!(redirectFileDto != null && redirectFileDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(1)) > 0)) {
