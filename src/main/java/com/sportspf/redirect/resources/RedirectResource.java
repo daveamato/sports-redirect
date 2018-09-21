@@ -40,6 +40,7 @@ public class RedirectResource {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36";
 
     static {
+        MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -162,30 +163,40 @@ public class RedirectResource {
         if (queryString != null) {
             url += "?" + queryString;
         }
-        if (fileName.contains(".file") || url.contains("keys")) {
-            ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-            File file = new File(fileName);
-            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(10)) > 0)) {
-                Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-                while (check != null) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-                    if (check == null) {
-                        responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-                        if (responseDto != null) {
-                            InputStream inputStream = new FileInputStream(file);
-                            IOUtils.copy(inputStream, response.getOutputStream());
-                            inputStream.close();
-                        }
-                        response.flushBuffer();
-                        return;
-                    }
+        ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
+        File file = new File(fileName);
+        if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(10)) > 0)) {
+            Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
+            while (check != null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // ignore
                 }
-                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
+                check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
+                if (check == null) {
+                    responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
+                    if (responseDto != null) {
+                        InputStream inputStream = new FileInputStream(file);
+                        IOUtils.copy(inputStream, response.getOutputStream());
+                        inputStream.close();
+                    }
+                    response.flushBuffer();
+                    return;
+                }
+            }
+            KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
+            if (url.contains("k2.php")) {
+                try {
+                    String key = restTemplate.getForObject(url, String.class);
+                    responseDto = new ResponseDTO();
+                    responseDto.setResponse(key);
+                    responseDto.setDownloadedAt(LocalDateTime.now());
+                    KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
+                } catch (Exception e) {
+                    // ignore
+                }
+            } else {
                 try {
                     ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream());
                     FileOutputStream fos = new FileOutputStream(file);
@@ -197,8 +208,14 @@ public class RedirectResource {
                 } catch (Exception e) {
                     // ignore
                 }
-                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
             }
+            KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
+        }
+        if (url.contains("k2.php")) {
+            if (responseDto != null) {
+                response.getWriter().write(responseDto.getResponse());
+            }
+        } else {
             InputStream inputStream = new FileInputStream(file);
             IOUtils.copy(inputStream, response.getOutputStream());
             inputStream.close();
