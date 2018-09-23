@@ -41,6 +41,7 @@ public class RedirectResource {
 
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
+        MLB_KEY_URL_MAP.put(9, "http://streamsgate.com/key?&q=");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -186,7 +187,7 @@ public class RedirectResource {
                 }
             }
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-            if (url.contains("k2.php")) {
+            if (url.contains("k2.php") || url.contains("streamsgate")) {
                 try {
                     String key = restTemplate.getForObject(url, String.class);
                     responseDto = new ResponseDTO();
