@@ -8,11 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 public class ClearRedirectOldFileJob implements Job {
     private final Logger LOGGER = LoggerFactory.getLogger(ClearRedirectOldFileJob.class);
@@ -23,7 +19,7 @@ public class ClearRedirectOldFileJob implements Job {
     public void execute(JobExecutionContext context) {
         LOGGER.info("Run clear redirect old file..");
         Set<Map.Entry<String, RedirectFileDTO>> entries = RedirectFileCache.REDIRECT_FILE_CACHE.entrySet();
-        RedirectFileCache.REDIRECT_FILE_CACHE = new ConcurrentHashMap<>();
+        RedirectFileCache.REDIRECT_FILE_CACHE = new HashMap<>();
         for (Map.Entry<String, RedirectFileDTO> entry : entries) {
             FILE_NAMES.add(entry.getValue().getFile().getName());
         }
