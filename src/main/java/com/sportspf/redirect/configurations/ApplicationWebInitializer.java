@@ -1,9 +1,6 @@
 package com.sportspf.redirect.configurations;
 
-import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
-
-import javax.servlet.Filter;
 
 public class ApplicationWebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
     @Override
