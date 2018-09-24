@@ -37,7 +37,7 @@ public class RedirectResource {
     //    private static final String BASE_URL = "http://localhost:8080/api/redirect/ncaaf/";
     private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
 
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
@@ -67,7 +67,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -114,7 +114,7 @@ public class RedirectResource {
                 Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -170,7 +170,7 @@ public class RedirectResource {
             Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
             while (check != null) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (InterruptedException e) {
                     // ignore
                 }
@@ -239,7 +239,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -277,7 +277,7 @@ public class RedirectResource {
                 Boolean check = RedirectFileCache.CHECK_DOWNLOAD_REDIRECT_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -330,7 +330,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         // ignore
                     }
