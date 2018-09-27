@@ -3,8 +3,6 @@ package com.sportspf.redirect.resources;
 import com.mchange.util.Base64Encoder;
 import com.sportspf.redirect.cache.KeyFileCache;
 import com.sportspf.redirect.cache.M3U8Cache;
-import com.sportspf.redirect.cache.RedirectFileCache;
-import com.sportspf.redirect.dtos.RedirectFileDTO;
 import com.sportspf.redirect.dtos.ResponseDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
@@ -21,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +40,7 @@ public class RedirectResource {
 
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
-        MLB_KEY_URL_MAP.put(9, "http://streamsgate.com/key?&q=");
+        MLB_KEY_URL_MAP.put(9, "http://streamsgate.com");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -67,7 +66,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(150);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -114,7 +113,7 @@ public class RedirectResource {
                 Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(150);
                     } catch (InterruptedException e) {
                         // ignore
                     }
@@ -161,16 +160,24 @@ public class RedirectResource {
         url += request.getRequestURI().substring(20);
         String queryString = request.getQueryString();
         String fileName = url.substring(url.lastIndexOf("/") + 1);
+        if (fileName.contains("?")) {
+            fileName = fileName.replaceAll("\\?", "");
+        }
         if (queryString != null) {
             url += "?" + queryString;
+            fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
+        }
+        if (fileName.length() > 255) {
+            fileName = fileName.substring(0, 128) + fileName.substring(fileName.length() - 127);
         }
         ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
         File file = new File(fileName);
-        if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(10)) > 0)) {
+        if (!(responseDto != null
+                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
             Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
             while (check != null) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(150);
                 } catch (InterruptedException e) {
                     // ignore
                 }
@@ -178,140 +185,49 @@ public class RedirectResource {
                 if (check == null) {
                     responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
                     if (responseDto != null) {
-                        InputStream inputStream = new FileInputStream(file);
-                        IOUtils.copy(inputStream, response.getOutputStream());
-                        inputStream.close();
+                        try {
+                            InputStream inputStream = new FileInputStream(file);
+                            IOUtils.copy(inputStream, response.getOutputStream());
+                            inputStream.close();
+                        } catch (Exception e) {
+                            // ignore
+                        }
                     }
                     response.flushBuffer();
                     return;
                 }
             }
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-            if (url.contains("k2.php") || url.contains("streamsgate")) {
-                try {
-                    String key = restTemplate.getForObject(url, String.class);
-                    responseDto = new ResponseDTO();
-                    responseDto.setResponse(key);
-                    responseDto.setDownloadedAt(LocalDateTime.now());
-                    KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
-                } catch (Exception e) {
-                    // ignore
+            try {
+                ReadableByteChannel rbc;
+                if (url.contains("streamsgate.com")) {
+                    URL urlCon = new URL(url);
+                    URLConnection urlConnection = urlCon.openConnection();
+                    urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
+                    rbc = Channels.newChannel(urlConnection.getInputStream());
+                } else {
+                    rbc = Channels.newChannel(new URL(url).openStream());
                 }
-            } else {
-                try {
-                    ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream());
-                    FileOutputStream fos = new FileOutputStream(file);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
-                    responseDto = new ResponseDTO();
-                    responseDto.setDownloadedAt(LocalDateTime.now());
-                    KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
-                } catch (Exception e) {
-                    // ignore
-                }
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                fos.close();
+                responseDto = new ResponseDTO();
+                responseDto.setDownloadedAt(LocalDateTime.now());
+                KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
+            } catch (Exception e) {
+                // ignore
             }
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
         }
-        if (url.contains("k2.php")) {
-            if (responseDto != null) {
-                response.getWriter().write(responseDto.getResponse());
-            }
-        } else {
-            InputStream inputStream = new FileInputStream(file);
-            IOUtils.copy(inputStream, response.getOutputStream());
-            inputStream.close();
-        }
-        response.flushBuffer();
-    }
 
-    @GetMapping(value = "/withUrl/**")
-    public void redirect(HttpServletRequest request,
-                         HttpServletResponse response) throws IOException {
-        String url = request.getRequestURI().substring(22);
-        String queryString = request.getQueryString();
-        String fileName = url.substring(url.lastIndexOf("/") + 1);
-        if (queryString != null) {
-            url += "?" + queryString;
-        }
-        if (fileName.contains(".m3u8")) {
-            ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
-            if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
-                Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
-                while (check != null) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
-                    if (check == null) {
-                        responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
-                        if (responseDto != null) {
-                            response.getWriter().write(responseDto.getResponse());
-                        }
-                        response.flushBuffer();
-                        return;
-                    }
-                }
-                M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.put(url, true);
-                try {
-                    HttpGet httpGet = new HttpGet(url);
-                    httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
-                    String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
-                    responseDto = new ResponseDTO();
-                    responseDto.setResponse(m3u8);
-                    responseDto.setDownloadedAt(LocalDateTime.now());
-                    M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
-                } catch (Exception e) {
-                    // ignore
-                }
-                M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
-            }
-            if (responseDto != null) {
-                response.getWriter().write(responseDto.getResponse());
-            }
-        } else {
-            File file = new File(fileName);
-            RedirectFileDTO redirectFileDto = RedirectFileCache.REDIRECT_FILE_CACHE.get(url);
-            if (!(redirectFileDto != null && redirectFileDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(1)) > 0)) {
-                Boolean check = RedirectFileCache.CHECK_DOWNLOAD_REDIRECT_FILE_CACHE.get(url);
-                while (check != null) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    check = RedirectFileCache.CHECK_DOWNLOAD_REDIRECT_FILE_CACHE.get(url);
-                    if (check == null) {
-                        redirectFileDto = RedirectFileCache.REDIRECT_FILE_CACHE.get(url);
-                        if (redirectFileDto != null) {
-                            InputStream inputStream = new FileInputStream(file);
-                            IOUtils.copy(inputStream, response.getOutputStream());
-                            inputStream.close();
-                        }
-                        response.flushBuffer();
-                        return;
-                    }
-                }
-                RedirectFileCache.CHECK_DOWNLOAD_REDIRECT_FILE_CACHE.put(url, true);
-                try {
-                    ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream());
-                    FileOutputStream fos = new FileOutputStream(file);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
-                    redirectFileDto = new RedirectFileDTO();
-                    redirectFileDto.setDownloadedAt(LocalDateTime.now());
-                    redirectFileDto.setFile(file);
-                    RedirectFileCache.REDIRECT_FILE_CACHE.put(url, redirectFileDto);
-                } catch (Exception e) {
-                    // ignore
-                }
-                RedirectFileCache.CHECK_DOWNLOAD_REDIRECT_FILE_CACHE.remove(url);
-            }
+        try {
             InputStream inputStream = new FileInputStream(file);
             IOUtils.copy(inputStream, response.getOutputStream());
             inputStream.close();
+        } catch (Exception e) {
+            // ignore
         }
+
         response.flushBuffer();
     }
 
@@ -323,6 +239,7 @@ public class RedirectResource {
         String fileName = url.substring(url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
+            fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
         }
         if (fileName.contains(".m3u8") || fileName.contains("check")) {
             ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
@@ -330,7 +247,7 @@ public class RedirectResource {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
                 while (check != null) {
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(150);
                     } catch (InterruptedException e) {
                         // ignore
                     }
