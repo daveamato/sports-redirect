@@ -26,7 +26,9 @@ import java.util.Map;
 
 @CrossOrigin(origins = {
         "http://www.cominstream.com",
-        "http://cominstream.com"
+        "http://cominstream.com",
+        "http://www.dofustream.com",
+        "http://dofustream.com"
 })
 @RestController
 @RequestMapping(value = "/api/redirect")
@@ -41,6 +43,7 @@ public class RedirectResource {
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
         MLB_KEY_URL_MAP.put(9, "http://streamsgate.com");
+        MLB_KEY_URL_MAP.put(8, "http://bilasport.net/nhl/");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
