@@ -41,6 +41,7 @@ public class RedirectResource {
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
         MLB_KEY_URL_MAP.put(9, "http://streamsgate.com");
+        MLB_KEY_URL_MAP.put(8, "http://bilasport.net/nhl/");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -200,14 +201,14 @@ public class RedirectResource {
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
             try {
                 ReadableByteChannel rbc;
+                URL urlCon = new URL(url);
+                URLConnection urlConnection = urlCon.openConnection();
                 if (url.contains("streamsgate.com")) {
-                    URL urlCon = new URL(url);
-                    URLConnection urlConnection = urlCon.openConnection();
                     urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
-                    rbc = Channels.newChannel(urlConnection.getInputStream());
-                } else {
-                    rbc = Channels.newChannel(new URL(url).openStream());
+                } else if (url.contains("http://52.56.118.143/")) {
+                    urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
                 }
+                rbc = Channels.newChannel(urlConnection.getInputStream());
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
                 fos.close();

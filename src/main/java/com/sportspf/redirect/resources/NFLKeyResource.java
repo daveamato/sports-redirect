@@ -23,8 +23,6 @@ import java.time.LocalDateTime;
 @RequestMapping(value = "/api/nfl")
 public class NFLKeyResource {
     private final RestTemplate restTemplate;
-    //private static final String BASE_URL = "http://www.cominstream.com/nfl.key";
-    private static final String BASE_URL = "http://localhost:8080/api/nfl/m3u8/";
 
     public NFLKeyResource(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
