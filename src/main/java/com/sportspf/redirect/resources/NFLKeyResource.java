@@ -2,6 +2,7 @@ package com.sportspf.redirect.resources;
 
 import com.sportspf.redirect.cache.M3U8Cache;
 import com.sportspf.redirect.dtos.ResponseDTO;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,7 @@ public class NFLKeyResource {
     @GetMapping(value = "/m3u8/**")
     public void getM3u8(HttpServletRequest request,
                         HttpServletResponse response) throws IOException {
+        response.setContentType("audio/x-mpegurl");
         String url = request.getRequestURI().substring(14);
         url = url.substring(url.indexOf("http"));
         String fileName = url.substring(url.lastIndexOf("/") + 1);
@@ -38,6 +40,10 @@ public class NFLKeyResource {
         String queryString = request.getQueryString();
         if (queryString != null) {
             url += "?" + queryString;
+        }
+        if (StringUtils.isEmpty(request.getHeader("origin")) && !url.contains("my_app")
+                && fileName.contains(".m3u8")) {
+            return;
         }
         ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
         if (!(responseDto != null
