@@ -41,7 +41,8 @@ public class RedirectResource {
     static {
         MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
         MLB_KEY_URL_MAP.put(9, "http://streamsgate.com");
-        MLB_KEY_URL_MAP.put(8, "http://bilasport.net/nhl/");
+        MLB_KEY_URL_MAP.put(8, "http://173.249.11.70/nhl/");
+        MLB_KEY_URL_MAP.put(7, "http://192.34.60.52/nhl/");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -62,6 +63,7 @@ public class RedirectResource {
             url += "?" + queryString;
         }
         if (fileName.contains(".m3u8")) {
+            response.setContentType("audio/x-mpegurl");
             ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);
             if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusSeconds(5)) > 0)) {
                 Boolean check = M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.get(url);
@@ -85,6 +87,9 @@ public class RedirectResource {
                 try {
                     HttpGet httpGet = new HttpGet(url);
                     httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
+                    if (url.contains("femmebiotch")) {
+                        httpGet.setHeader("Referer", "http://femmebiotch.com");
+                    }
                     String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
                     StringBuilder res = new StringBuilder();
                     String m3u8Lines[] = m3u8.split("\n");
@@ -164,8 +169,21 @@ public class RedirectResource {
         if (fileName.contains("?")) {
             fileName = fileName.replaceAll("\\?", "");
         }
+        boolean isCallHttp = false;
         if (queryString != null) {
-            url += "?" + queryString;
+            if (id == 8) {
+                String base64 = queryString.substring(queryString.indexOf("=") + 1);
+                String base64Decode = new String(Base64.getDecoder().decode(base64));
+                if (base64Decode.contains("https://mf.svc.nhl.com/")) {
+                    base64Decode = base64Decode.substring(base64Decode.indexOf("com/") + 4);
+                    url += "?" + queryString.substring(0, queryString.indexOf("=") + 1) + base64Decode;
+                    isCallHttp = true;
+                } else {
+                    url += "?" + queryString;
+                }
+            } else {
+                url += "?" + queryString;
+            }
             fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
         }
         if (fileName.length() > 255) {
@@ -187,9 +205,13 @@ public class RedirectResource {
                     responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
                     if (responseDto != null) {
                         try {
-                            InputStream inputStream = new FileInputStream(file);
-                            IOUtils.copy(inputStream, response.getOutputStream());
-                            inputStream.close();
+                            if (isCallHttp) {
+                                response.getWriter().write(responseDto.getResponse());
+                            } else {
+                                InputStream inputStream = new FileInputStream(file);
+                                IOUtils.copy(inputStream, response.getOutputStream());
+                                inputStream.close();
+                            }
                         } catch (Exception e) {
                             // ignore
                         }
@@ -200,19 +222,26 @@ public class RedirectResource {
             }
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
             try {
-                ReadableByteChannel rbc;
-                URL urlCon = new URL(url);
-                URLConnection urlConnection = urlCon.openConnection();
-                if (url.contains("streamsgate.com")) {
-                    urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
-                } else if (url.contains("http://52.56.118.143/")) {
-                    urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
-                }
-                rbc = Channels.newChannel(urlConnection.getInputStream());
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                fos.close();
                 responseDto = new ResponseDTO();
+                if (isCallHttp) {
+                    HttpGet httpGet = new HttpGet(url);
+                    httpGet.setHeader("content-type", "text/html; charset=UTF-8");
+                    String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
+                    responseDto.setResponse(m3u8);
+                } else {
+                    ReadableByteChannel rbc;
+                    URL urlCon = new URL(url);
+                    URLConnection urlConnection = urlCon.openConnection();
+                    if (url.contains("streamsgate.com")) {
+                        urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
+                    } else if (url.contains("http://52.56.118.143/")) {
+                        urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
+                    }
+                    rbc = Channels.newChannel(urlConnection.getInputStream());
+                    FileOutputStream fos = new FileOutputStream(file);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    fos.close();
+                }
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
             } catch (Exception e) {
@@ -222,9 +251,15 @@ public class RedirectResource {
         }
 
         try {
-            InputStream inputStream = new FileInputStream(file);
-            IOUtils.copy(inputStream, response.getOutputStream());
-            inputStream.close();
+            if (isCallHttp) {
+                if (responseDto != null) {
+                    response.getWriter().write(responseDto.getResponse());
+                }
+            } else {
+                InputStream inputStream = new FileInputStream(file);
+                IOUtils.copy(inputStream, response.getOutputStream());
+                inputStream.close();
+            }
         } catch (Exception e) {
             // ignore
         }
@@ -241,6 +276,9 @@ public class RedirectResource {
         if (queryString != null) {
             url += "?" + queryString;
             fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
+        }
+        if (fileName.contains(".m3u8")) {
+            response.setContentType("audio/x-mpegurl");
         }
         if (fileName.contains(".m3u8") || fileName.contains("check")) {
             ResponseDTO responseDto = M3U8Cache.M3U8_RESPONSE_CACHE.get(url);

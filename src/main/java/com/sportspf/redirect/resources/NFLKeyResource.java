@@ -31,6 +31,7 @@ public class NFLKeyResource {
     @GetMapping(value = "/m3u8/**")
     public void getM3u8(HttpServletRequest request,
                         HttpServletResponse response) throws IOException {
+        response.setContentType("audio/x-mpegurl");
         String url = request.getRequestURI().substring(14);
         url = url.substring(url.indexOf("http"));
         String fileName = url.substring(url.lastIndexOf("/") + 1);
