@@ -10,10 +10,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,10 +39,10 @@ public class RedirectResource {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
 
     static {
-        MLB_KEY_URL_MAP.put(0, "http://sportspass.rocks/live/k2.php?q=");
-        MLB_KEY_URL_MAP.put(9, "http://streamsgate.com");
-        MLB_KEY_URL_MAP.put(8, "http://173.249.11.70/nhl/");
+        MLB_KEY_URL_MAP.put(9, "http://sevensport.us/nhl/");
+        MLB_KEY_URL_MAP.put(8, "http://173.249.11.70/");
         MLB_KEY_URL_MAP.put(7, "http://192.34.60.52/nhl/");
+        MLB_KEY_URL_MAP.put(6, "http://138.197.207.74/nhl/kiosport.php?url=");
         MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
         MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
     }
@@ -61,6 +61,10 @@ public class RedirectResource {
         String baseUrl = url.substring(0, url.lastIndexOf("/") + 1);
         if (queryString != null) {
             url += "?" + queryString;
+        }
+        if (StringUtils.isEmpty(request.getHeader("origin")) && !url.contains("my_app")
+                && fileName.contains(".m3u8")) {
+            return;
         }
         if (fileName.contains(".m3u8")) {
             response.setContentType("audio/x-mpegurl");
@@ -105,14 +109,14 @@ public class RedirectResource {
                     responseDto.setDownloadedAt(LocalDateTime.now());
                     M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    // ignore
+                    response.getWriter().write(e.getMessage());
+                    M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
+                    response.flushBuffer();
+                    return;
                 }
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
             }
-            if (responseDto != null) {
-                response.getWriter().write(responseDto.getResponse());
-            }
+            response.getWriter().write(responseDto.getResponse());
         } else {
             ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
             if (!(responseDto != null && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
@@ -141,13 +145,14 @@ public class RedirectResource {
                     responseDto.setDownloadedAt(LocalDateTime.now());
                     KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
                 } catch (Exception e) {
-                    // ignore
+                    response.getWriter().write(e.getMessage());
+                    KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
+                    response.flushBuffer();
+                    return;
                 }
                 KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
             }
-            if (responseDto != null) {
-                response.getWriter().write(responseDto.getResponse());
-            }
+            response.getWriter().write(responseDto.getResponse());
         }
         response.flushBuffer();
     }
@@ -213,7 +218,9 @@ public class RedirectResource {
                                 inputStream.close();
                             }
                         } catch (Exception e) {
-                            // ignore
+                            response.getWriter().write(e.getMessage());
+                            response.flushBuffer();
+                            return;
                         }
                     }
                     response.flushBuffer();
@@ -223,29 +230,25 @@ public class RedirectResource {
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
             try {
                 responseDto = new ResponseDTO();
-                if (isCallHttp) {
-                    HttpGet httpGet = new HttpGet(url);
-                    httpGet.setHeader("content-type", "text/html; charset=UTF-8");
-                    String m3u8 = IOUtils.toString(HTTP_CLIENT.execute(httpGet).getEntity().getContent(), "UTF-8");
-                    responseDto.setResponse(m3u8);
-                } else {
-                    ReadableByteChannel rbc;
-                    URL urlCon = new URL(url);
-                    URLConnection urlConnection = urlCon.openConnection();
-                    if (url.contains("streamsgate.com")) {
-                        urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
-                    } else if (url.contains("http://52.56.118.143/")) {
-                        urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
-                    }
-                    rbc = Channels.newChannel(urlConnection.getInputStream());
-                    FileOutputStream fos = new FileOutputStream(file);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                    fos.close();
+                ReadableByteChannel rbc;
+                URL urlCon = new URL(url);
+                URLConnection urlConnection = urlCon.openConnection();
+                if (url.contains("streamsgate.com")) {
+                    urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
+                } else if (url.contains("http://52.56.118.143/")) {
+                    urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
                 }
+                rbc = Channels.newChannel(urlConnection.getInputStream());
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                fos.close();
                 responseDto.setDownloadedAt(LocalDateTime.now());
                 KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
             } catch (Exception e) {
-                // ignore
+                response.getWriter().write(e.getMessage());
+                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
+                response.flushBuffer();
+                return;
             }
             KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
         }
@@ -261,7 +264,7 @@ public class RedirectResource {
                 inputStream.close();
             }
         } catch (Exception e) {
-            // ignore
+            response.getWriter().write(e.getMessage());
         }
 
         response.flushBuffer();
@@ -276,6 +279,10 @@ public class RedirectResource {
         if (queryString != null) {
             url += "?" + queryString;
             fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
+        }
+        if (StringUtils.isEmpty(request.getHeader("origin")) && !url.contains("my_app")
+                && fileName.contains(".m3u8")) {
+            return;
         }
         if (fileName.contains(".m3u8")) {
             response.setContentType("audio/x-mpegurl");
@@ -316,14 +323,27 @@ public class RedirectResource {
                     responseDto.setDownloadedAt(LocalDateTime.now());
                     M3U8Cache.M3U8_RESPONSE_CACHE.put(url, responseDto);
                 } catch (Exception e) {
-                    // ignore
+                    response.getWriter().write(e.getMessage());
+                    M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
+                    response.flushBuffer();
+                    return;
                 }
                 M3U8Cache.CHECK_DOWNLOAD_M3U8_FILE_CACHE.remove(url);
             }
-            if (responseDto != null) {
-                response.getWriter().write(responseDto.getResponse());
-            }
+            response.getWriter().write(responseDto.getResponse());
         }
         response.flushBuffer();
+    }
+
+    @RequestMapping(value = "/redirect", method = RequestMethod.GET)
+    public void method(HttpServletResponse httpServletResponse) {
+
+    }
+
+    @GetMapping("/302/**")
+    public void method(HttpServletRequest request, HttpServletResponse httpServletResponse) {
+        String url = request.getRequestURI().substring(18);
+        httpServletResponse.setHeader("Location", url);
+        httpServletResponse.setStatus(302);
     }
 }
