@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -313,11 +312,6 @@ public class RedirectResource {
             response.getWriter().write(responseDto.getResponse());
         }
         response.flushBuffer();
-    }
-
-    @RequestMapping(value = "/redirect", method = RequestMethod.GET)
-    public void method(HttpServletResponse httpServletResponse) {
-
     }
 
     @GetMapping("/302/**")
