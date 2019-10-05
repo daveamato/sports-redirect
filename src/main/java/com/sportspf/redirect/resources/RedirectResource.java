@@ -10,20 +10,17 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 @CrossOrigin(origins = {
         "http://www.cominstream.com",
@@ -37,18 +34,8 @@ public class RedirectResource {
     private final RestTemplate restTemplate;
     private static final String BASE_URL = System.getenv("BASE_URL") + "api/redirect/ncaaf/";
     //    private static final String BASE_URL = "http://localhost:8080/api/redirect/ncaaf/";
-    private static final Map<Integer, String> MLB_KEY_URL_MAP = new HashMap<>();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
-
-    static {
-        MLB_KEY_URL_MAP.put(9, "http://sevensport.us/nhl/");
-        MLB_KEY_URL_MAP.put(8, "http://173.249.11.70/");
-        MLB_KEY_URL_MAP.put(7, "http://192.34.60.52/nhl/");
-        MLB_KEY_URL_MAP.put(6, "http://138.197.207.74/nhl/kiosport.php?url=");
-        MLB_KEY_URL_MAP.put(1, "http://5.135.240.6/");
-        MLB_KEY_URL_MAP.put(2, "http://52.56.118.143/");
-    }
 
     @Autowired
     public RedirectResource(RestTemplate restTemplate) {
@@ -160,93 +147,10 @@ public class RedirectResource {
         response.flushBuffer();
     }
 
-    @GetMapping(value = "/mlb/{id}/**")
-    public void redirectMLB(HttpServletRequest request,
-                            HttpServletResponse response,
-                            @PathVariable(value = "id") Integer id) throws IOException {
+    @GetMapping(value = "/nhl/**")
+    public void redirectNHL(HttpServletRequest request,
+                            HttpServletResponse response) throws IOException {
         response.setContentType("application/octet-stream");
-        String url = MLB_KEY_URL_MAP.get(id);
-        if (url == null) {
-            response.flushBuffer();
-            return;
-        }
-        url += request.getRequestURI().substring(20);
-        String queryString = request.getQueryString();
-        String fileName = url.substring(url.lastIndexOf("/") + 1);
-        if (fileName.contains("?")) {
-            fileName = fileName.replaceAll("\\?", "");
-        }
-        if (queryString != null) {
-            url += "?" + queryString;
-            fileName += Base64.getEncoder().encodeToString(queryString.getBytes());
-        }
-        if (fileName.length() > 255) {
-            fileName = fileName.substring(0, 128) + fileName.substring(fileName.length() - 127);
-        }
-        ResponseDTO responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-        File file = new File(fileName);
-        if (!(responseDto != null
-                && responseDto.getDownloadedAt().compareTo(LocalDateTime.now().minusMinutes(5)) > 0)) {
-            Boolean check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-            while (check != null) {
-                try {
-                    Thread.sleep(150);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                check = KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.get(url);
-                if (check == null) {
-                    responseDto = KeyFileCache.KEY_FILE_RESPONSE_CACHE.get(url);
-                    if (responseDto != null) {
-                        try {
-                            InputStream inputStream = new FileInputStream(file);
-                            IOUtils.copy(inputStream, response.getOutputStream());
-                            inputStream.close();
-                        } catch (Exception e) {
-                            response.getWriter().write(e.getMessage());
-                            response.flushBuffer();
-                            return;
-                        }
-                    }
-                    response.flushBuffer();
-                    return;
-                }
-            }
-            KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.put(url, true);
-            try {
-                responseDto = new ResponseDTO();
-                ReadableByteChannel rbc;
-                URL urlCon = new URL(url);
-                URLConnection urlConnection = urlCon.openConnection();
-                if (url.contains("streamsgate.com")) {
-                    urlConnection.setRequestProperty("Referer", "http://www.streamsgate.com/");
-                } else if (url.contains("http://52.56.118.143/")) {
-                    urlConnection.setRequestProperty("Referer", "http://52.56.118.143/");
-                }
-                rbc = Channels.newChannel(urlConnection.getInputStream());
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                fos.close();
-                responseDto.setDownloadedAt(LocalDateTime.now());
-                KeyFileCache.KEY_FILE_RESPONSE_CACHE.put(url, responseDto);
-            } catch (Exception e) {
-                response.getWriter().write(e.getMessage());
-                KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
-                response.flushBuffer();
-                return;
-            }
-            KeyFileCache.CHECK_DOWNLOAD_KEY_FILE_CACHE.remove(url);
-        }
-
-        try {
-            InputStream inputStream = new FileInputStream(file);
-            IOUtils.copy(inputStream, response.getOutputStream());
-            inputStream.close();
-        } catch (Exception e) {
-            response.getWriter().write(e.getMessage());
-        }
-
-        response.flushBuffer();
     }
 
     @GetMapping(value = "/ncaaf/**")
