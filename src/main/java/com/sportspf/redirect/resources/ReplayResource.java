@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.sportspf.redirect.cache.ReplayCache.NBA_CACHE;
 
@@ -73,21 +71,34 @@ public class ReplayResource {
     }
 
     @GetMapping(value = "/watchraw")
-    public void getUrl(@RequestParam(value = "data") String data,
-                       HttpServletResponse response) throws IOException {
+    public List<String> getUrl(@RequestParam(value = "data") String data) throws IOException {
         if (NBA_CACHE.get(data) != null) {
-            response.getWriter().write(String.valueOf(NBA_CACHE.get(data)));
+            return (List<String>) NBA_CACHE.get(data);
         } else {
             HttpGet httpGet = new HttpGet("http://watchraw.com/ajax?data=" + data);
             httpGet.setHeader(HttpHeaders.USER_AGENT, USER_AGENT);
             httpGet.setHeader("Referer", "http://watchraw.com/");
             String html = IOUtils.toString(HttpClientBuilder.create().build().execute(httpGet).getEntity().getContent(), "UTF-8");
-            int from = html.indexOf("<iframe src=\"") + 13;
-            int to = html.indexOf("\"", from);
-            String source = html.substring(from, to);
-            NBA_CACHE.put(data, source);
-            response.getWriter().write(source);
+            List<String> result = new ArrayList<>();
+            String source = "";
+            int from = html.indexOf("\"file\": \"") + 9, to;
+            if (from > 9) {
+                to = html.indexOf("\"", from);
+                source = html.substring(from, to);
+                if (source.startsWith("http")) {
+                    result.add(source);
+                }
+            }
+            from = html.indexOf("<iframe src=\"") + 13;
+            if (from > 13) {
+                to = html.indexOf("\"", from);
+                source = html.substring(from, to);
+                if (source.startsWith("http")) {
+                    result.add(source);
+                }
+            }
+            NBA_CACHE.put(data, result);
+            return result;
         }
-        response.flushBuffer();
     }
 }
