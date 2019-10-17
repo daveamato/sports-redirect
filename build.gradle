@@ -38,6 +38,9 @@ dependencies {
     compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.9'
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.5'
     compile group: 'org.apache.httpcomponents', name: 'httpclient-cache', version: '4.5.5'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
+    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }

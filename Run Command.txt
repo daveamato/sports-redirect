@@ -1,3 +1,4 @@
 cf push -m 1536M ncaaf-redirect -p ./build/libs/redirect-0.1.war
 cf push -m 1536M nfl-redirect -p ./build/libs/redirect-0.1.war
 cf push -m 1536M mlb-redirect -p ./build/libs/redirect-0.1.war
+cf push -m 1024M replay -p ./build/libs/redirect-0.1.war
